@@ -1,23 +1,23 @@
 import json, subprocess, os, re, math
 FPS=30
-W=os.getcwd(); os.makedirs("build/pieces",exist_ok=True)
+W=os.getcwd(); os.makedirs("build/pieces_v2",exist_ok=True)
 def fr(t): return int(round(t*FPS))
 # ---- timeline: sections with audio spans (source seconds) and picture pieces (kind, src, start, frames)
 sections=[
- {"id":"A","a0":28.92,"pieces":[("photo","p05",0,58),("photo","p03",0,88),("photo","p07",0,68)]},
+ {"id":"A","a0":28.92,"pieces":[("photo","p04",0,58),("photo","p03",0,88),("photo","p07",0,68)]},
  {"id":"B","a0":0.00,"pieces":[("vid","src",0.00,136)]},
- {"id":"C","a0":6.40,"pieces":[("vid","src",6.40,207),("photo","p08",0,30),("photo","p09",0,29),("vid","src",15.2667,40)]},
+ {"id":"C","a0":6.40,"pieces":[("vid","src",6.40,180),("photo","p05",0,27),("photo","p08",0,30),("photo","p09",0,29),("vid","src",15.2667,40)]},
  {"id":"D","a0":39.20,"pieces":[("vid","src",76.90,120),("vid","src",43.20,198)]},
- {"id":"E","a0":49.95,"pieces":[("vid","src",49.95,189),("photo","p10",0,44),("photo","p04",0,36),("photo","p02",0,32),("vid","src",59.9833,400)]},
+ {"id":"E","a0":49.95,"pieces":[("vid","src",49.95,233),("photo","p02",0,68),("vid","src",59.9833,400)]},
  {"id":"F","a0":81.45,"pieces":[("vid","src",81.45,213)]},
 ]
-CARD_DUR=3.4; XF=0.6
+CARD_DUR=3.0; CARD2_DUR=3.0; XF=0.6; XF2=0.5
 # ---- render pieces
 plist=[]; reel=0; n=0; sec_reel={}
 for s in sections:
     s["r0"]=reel; sec_reel[s["id"]]=reel; frames=0
     for kind,srcn,st,nf in s["pieces"]:
-        out=f"build/pieces/{n:02d}_{s['id']}_{kind}_{srcn}.mp4"
+        out=f"build/pieces_v2/{n:02d}_{s['id']}_{kind}_{srcn}.mp4"
         if not os.path.exists(out):
             if kind=="vid":
                 cmd=["ffmpeg","-v","error","-y","-ss",f"{st:.4f}","-i","src.mp4","-frames:v",str(nf),"-vf",f"scale=1080:1920:flags=lanczos,fps={FPS},setsar=1,format=yuv420p","-an","-c:v","libx264","-crf","12","-preset","medium",out]
@@ -93,7 +93,7 @@ ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Sub,Inter Medium,54,&H00FFFFFF,&H00FFFFFF,&H5A000000,&H80000000,0,0,0,0,100,100,0,0,1,2.4,1.2,2,100,100,420,1
-Style: Title,Inter SemiBold,42,&H00FFFFFF,&H00FFFFFF,&H70000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,8,100,100,330,1
+Style: Title,Inter SemiBold,42,&H00FFFFFF,&H00FFFFFF,&H70000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,8,100,100,290,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -102,13 +102,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 open("build/subs.ass","w").write(ass)
 print("captions:",len(lines)); print("\n".join(lines[:6]))
 # ---- audio
-TOTAL=TOTAL_SPEECH-XF+CARD_DUR
+TOTAL=TOTAL_SPEECH-XF+CARD_DUR-XF2+CARD2_DUR
 af=[]; concat_in=[]
 for i,s in enumerate(sections):
     af.append(f"[0:a]atrim=start={s['a0']:.4f}:end={s['a0']+s['dur']:.4f},asetpts=PTS-STARTPTS,afade=t=in:d=0.012,afade=t=out:st={s["dur"]-0.03:.4f}:d=0.03[d{i}]")
     concat_in.append(f"[d{i}]")
 af.append(f"{''.join(concat_in)}concat=n={len(sections)}:v=0:a=1,apad=whole_dur={TOTAL:.3f}[dlg]")
-af.append(f"[1:a]atrim=0:{TOTAL:.3f},volume=0.30,afade=t=out:st={TOTAL-2.8:.3f}:d=2.8[m0]")
+af.append(f"[1:a]atrim=0:{TOTAL:.3f},volume=0.30,afade=t=out:st={TOTAL-3.2:.3f}:d=3.2[m0]")
 af.append("[dlg]asplit[dlg1][sc]")
 af.append("[m0][sc]sidechaincompress=threshold=0.035:ratio=4:attack=40:release=900:makeup=1:level_sc=1[md]")
 af.append("[dlg1][md]amix=inputs=2:normalize=0:duration=first[mix]")
@@ -125,10 +125,20 @@ card=(f"drawtext=fontfile={FONT_M}:text='THANK YOU FOR BEING PART OF OUR JOURNEY
       f"drawtext=fontfile={FONT_B}:text='FULL SIZE RUN':fontcolor=white:fontsize=104:x=(w-text_w)/2:y=940,"
       f"drawbox=x=(iw-140)/2:y=1082:w=140:h=7:color=0xD0021B@1:t=fill")
 offset=TOTAL_SPEECH-XF
+offset2=TOTAL_SPEECH-XF+CARD_DUR-XF2
+card2=(f"drawtext=fontfile={FONT_B}:textfile=build/card2a.txt:fontcolor=white:fontsize=92:x=(w-text_w)/2:y=820,"
+       f"drawtext=fontfile={FONT_B}:textfile=build/card2b.txt:fontcolor=white:fontsize=92:x=(w-text_w)/2:y=930,"
+       f"drawtext=fontfile={FONT_M}:text='@fullsizerun.in':fontcolor=white@0.7:fontsize=36:x=(w-text_w)/2:y=1070,"
+       f"drawbox=x=(iw-140)/2:y=1150:w=140:h=7:color=0xD0021B@1:t=fill")
 fc=(f"[0:v]fps={FPS},settb=1/{FPS},ass=build/subs.ass,noise=alls=5:allf=t+u[v0];"
     f"[1:v]settb=1/{FPS},{card}[card];"
-    f"[v0][card]xfade=transition=fade:duration={XF}:offset={offset:.4f},fade=t=out:st={TOTAL-0.6:.3f}:d=0.6,format=yuv420p[v]")
-subprocess.run(["ffmpeg","-v","error","-y","-f","concat","-safe","0","-i","build/concat.txt","-f","lavfi","-i",f"color=c=0x0a0a0a:s=1080x1920:r={FPS}:d={CARD_DUR}","-i","build/mix_final.wav",
-  "-filter_complex",fc,"-map","[v]","-map","2:a","-c:v","libx264","-crf","19","-preset","slow","-profile:v","high","-level","4.1","-r",str(FPS),"-pix_fmt","yuv420p","-c:a","aac","-b:a","192k","-ar","48000","-movflags","+faststart","-shortest","build/FSR-thankyou-reel.mp4"],check=True)
+    f"[2:v]settb=1/{FPS},{card2}[card2];"
+    f"[v0][card]xfade=transition=fade:duration={XF}:offset={offset:.4f}[v1];"
+    f"[v1][card2]xfade=transition=fade:duration={XF2}:offset={offset2:.4f},fade=t=out:st={TOTAL-0.6:.3f}:d=0.6,format=yuv420p[v]")
+subprocess.run(["ffmpeg","-v","error","-y","-f","concat","-safe","0","-i","build/concat.txt",
+  "-f","lavfi","-i",f"color=c=0x0a0a0a:s=1080x1920:r={FPS}:d={CARD_DUR}",
+  "-f","lavfi","-i",f"color=c=0x0a0a0a:s=1080x1920:r={FPS}:d={CARD2_DUR}",
+  "-i","build/mix_final.wav",
+  "-filter_complex",fc,"-map","[v]","-map","3:a","-c:v","libx264","-crf","19","-preset","slow","-profile:v","high","-level","4.1","-r",str(FPS),"-pix_fmt","yuv420p","-c:a","aac","-b:a","192k","-ar","48000","-movflags","+faststart","-shortest","build/FSR-thankyou-reel.mp4"],check=True)
 print("TOTAL",TOTAL)
 json.dump({"sections":[{k:v for k,v in s.items()} for s in sections],"total":TOTAL,"speech":TOTAL_SPEECH},open("build/timeline.json","w"),indent=1)

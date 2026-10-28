@@ -8,7 +8,7 @@ ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Sub,Inter Medium,54,&H00FFFFFF,&H00FFFFFF,&H5A000000,&H80000000,0,0,0,0,100,100,0,0,1,2.4,1.2,2,100,100,420,1
-Style: Title,Inter SemiBold,42,&H00FFFFFF,&H00FFFFFF,&H70000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,8,100,100,330,1
+Style: Title,Inter SemiBold,42,&H00FFFFFF,&H00FFFFFF,&H70000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,8,100,100,290,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
