@@ -1,0 +1,50 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Sub,Inter Medium,54,&H00FFFFFF,&H00FFFFFF,&H5A000000,&H80000000,0,0,0,0,100,100,0,0,1,2.4,1.2,2,100,100,420,1
+Style: Title,Inter SemiBold,42,&H00FFFFFF,&H00FFFFFF,&H70000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,8,100,100,330,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 1,0:00:00.45,0:00:03.30,Title,,0,0,0,,{\fad(500,500)\fsp7}BEFORE ALL OF THIS
+Dialogue: 0,0:00:00.00,0:00:01.68,Sub,,0,0,0,,I was a teenager when I\Nstarted this business.
+Dialogue: 0,0:00:01.72,0:00:04.68,Sub,,0,0,0,,I used to sell three\Nto five shoes a month,
+Dialogue: 0,0:00:04.72,0:00:06.00,Sub,,0,0,0,,with the sole\Npurpose of,
+Dialogue: 0,0:00:06.04,0:00:07.01,Sub,,0,0,0,,you know, just\Nmaking money.
+Dialogue: 0,0:00:07.05,0:00:09.81,Sub,,0,0,0,,Hi guys, I'm just\Nat the warehouse.
+Dialogue: 0,0:00:09.85,0:00:11.71,Sub,,0,0,0,,It's about 9:15 p.m.
+Dialogue: 0,0:00:11.75,0:00:13.63,Sub,,0,0,0,,And just a quick video.
+Dialogue: 0,0:00:13.67,0:00:14.33,Sub,,0,0,0,,This is nothing.
+Dialogue: 0,0:00:14.37,0:00:16.31,Sub,,0,0,0,,Koi vlog nahi, koi\Nstock update nahi.
+Dialogue: 0,0:00:16.35,0:00:17.63,Sub,,0,0,0,,Just to thank you all.
+Dialogue: 0,0:00:17.67,0:00:19.27,Sub,,0,0,0,,Thank my family,\Nthank my friends,
+Dialogue: 0,0:00:19.31,0:00:21.87,Sub,,0,0,0,,thank God that they\Nhave taken me this far.
+Dialogue: 0,0:00:21.91,0:00:22.75,Sub,,0,0,0,,Like, five years later,
+Dialogue: 0,0:00:22.79,0:00:25.35,Sub,,0,0,0,,we're at this warehouse\Nwhere in just three
+Dialogue: 0,0:00:25.39,0:00:28.91,Sub,,0,0,0,,months we are numbering\Nour 4,200th pair,
+Dialogue: 0,0:00:28.95,0:00:29.95,Sub,,0,0,0,,which is insane for me.
+Dialogue: 0,0:00:29.99,0:00:32.52,Sub,,0,0,0,,I know people sell much\Nmore and much higher.
+Dialogue: 0,0:00:32.56,0:00:33.52,Sub,,0,0,0,,But this is just, like,
+Dialogue: 0,0:00:33.56,0:00:35.60,Sub,,0,0,0,,a very big\Nmoment for me,
+Dialogue: 0,0:00:35.64,0:00:36.84,Sub,,0,0,0,,which is where\NI realised that
+Dialogue: 0,0:00:36.88,0:00:38.08,Sub,,0,0,0,,gratitude is\Nvery important.
+Dialogue: 0,0:00:38.12,0:00:40.64,Sub,,0,0,0,,So I just want to thank\Nall of my buyers, my…
+Dialogue: 0,0:00:40.68,0:00:42.44,Sub,,0,0,0,,everyone who has supported\Nme in this journey.
+Dialogue: 0,0:00:42.48,0:00:44.88,Sub,,0,0,0,,Sumit bhaiya,\Nlike, everyone
+Dialogue: 0,0:00:44.92,0:00:46.68,Sub,,0,0,0,,who has always\Nbeen there.
+Dialogue: 0,0:00:46.72,0:00:50.36,Sub,,0,0,0,,And I think we're just\Ngetting started, and…
+Dialogue: 0,0:00:50.40,0:00:51.52,Sub,,0,0,0,,just, like,\Nthank you so much
+Dialogue: 0,0:00:51.56,0:00:53.16,Sub,,0,0,0,,everyone, and\NGod is great,
+Dialogue: 0,0:00:53.20,0:00:55.04,Sub,,0,0,0,,and I just love\Nyou all so much.
+Dialogue: 0,0:00:55.08,0:00:56.40,Sub,,0,0,0,,Thank you.
+Dialogue: 0,0:00:56.44,0:00:57.56,Sub,,0,0,0,,So thank you everyone,
+Dialogue: 0,0:00:57.60,0:00:59.88,Sub,,0,0,0,,and love you,\Nkeep supporting us.
+Dialogue: 0,0:00:59.92,0:01:00.40,Sub,,0,0,0,,Thank you.
+Dialogue: 0,0:01:00.44,0:01:01.72,Sub,,0,0,0,,Thank you, thank you.
+Dialogue: 0,0:01:01.76,0:01:02.74,Sub,,0,0,0,,Thank you.
