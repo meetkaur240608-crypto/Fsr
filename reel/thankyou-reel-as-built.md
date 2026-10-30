@@ -2,7 +2,7 @@
 
 Deliverables in this folder:
 
-- `FSR-thankyou-reel.mp4` — the finished Reel, 1080×1920, 30 fps, H.264 High, AAC 48 kHz stereo, 67.8 s, −14 LUFS integrated, true peak −1 dBTP.
+- `FSR-thankyou-reel.mp4` — the finished Reel, 1080×1920, 30 fps, H.264 High, AAC 320 kbps 48 kHz stereo, 67.8 s, −14 LUFS integrated, true peak −1 dBTP. The posting master (CRF 15, veryslow, about 30 Mbps, 258 MB) was delivered in the session and exceeds GitHub's file limit; the copy stored here is the same picture re-encoded at CRF 18 (about 80 MB) with the master's audio copied unchanged.
 - `FSR-thankyou-reel.srt` — the burned-in captions as a separate subtitle file, for re-use or correction.
 - `FSR-thankyou-reel-cover.jpg` — suggested cover frame (helper's thumbs-up).
 
@@ -40,7 +40,8 @@ Removed from the source: 4.53–6.40 ("Say hello" and the greeting), 16.60–28.
 ## Audio
 
 - Dialogue: original voices, high-pass at 80 Hz, light spectral noise reduction (afftdn, about 9 dB), gentle 2:1 compression above −20 dB. Segments joined with 12 ms fade-in and 30 ms fade-out at each cut, on word boundaries.
-- Music: a soft synthesised pad in D major with a sparse felt-piano line (generated for this edit; no third-party track was available in the build environment). Base level about −25 LUFS; side-chain ducked by the dialogue (4:1 above −29 dBFS, 40 ms attack, 900 ms release), which sits it around −36 LUFS under speech and lets it rise in the photo montage and over the card. Fades out over the last 3.2 s.
+- Music: a warm, gently lively synthesised bed in C major (I–V–vi–IV at 96 BPM): soft pad plus a plucked eighth-note arpeggio. A soft kick enters under the helper's close-up (0:55.8), and over the closing cards it opens up (kick on every beat, light shaker, octave plucks, +6 dB) so the ending reads as a lift rather than a goodbye. Generated for this edit; no third-party track was available in the build environment. Side-chain ducked by the dialogue (4:1 above −29 dBFS, 40 ms attack, 900 ms release), about −36 LUFS under speech. Fades out over the last 1.2 s.
+- Shutter click: a short synthesised camera-shutter sound on every cut-in to a photograph (0:00, 0:01.9, 0:04.9, 0:17.7, 0:18.6, 0:19.6, 0:40.2), mixed outside the ducking at about −20 dBFS peak.
 - Mix: two-pass linear loudness normalisation to −14 LUFS, −1 dBTP.
 
 If you prefer a licensed track, drop it in place of `music_bed.wav` at the same level and re-run the build; the ducking is automatic.
@@ -54,6 +55,6 @@ Two transcript items to confirm by ear before posting: "Koi **vlog** nahi" (the 
 ## Export settings used
 
 ```
-ffmpeg … -c:v libx264 -crf 19 -preset slow -profile:v high -level 4.1 -r 30 -pix_fmt yuv420p \
-       -c:a aac -b:a 192k -ar 48000 -movflags +faststart
+ffmpeg … -c:v libx264 -crf 15 -preset veryslow -profile:v high -level 4.2 -x264-params aq-mode=3:ref=5 \
+       -r 30 -pix_fmt yuv420p -c:a aac -b:a 320k -ar 48000 -movflags +faststart
 ```

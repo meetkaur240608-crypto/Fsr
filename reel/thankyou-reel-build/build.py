@@ -101,6 +101,28 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """+"\n".join(lines)+"\n"
 open("build/subs.ass","w").write(ass)
 print("captions:",len(lines)); print("\n".join(lines[:6]))
+# ---- shutter clicks at every photo cut-in (reel time)
+import numpy as np, wave as _wave
+SR=48000; TOTAL=TOTAL_SPEECH-XF+CARD_DUR-XF2+CARD2_DUR
+ct=np.zeros(int(SR*(TOTAL+1)))
+def shutter():
+    rng=np.random.default_rng(3); L=int(0.16*SR); tt=np.arange(L)/SR; n=rng.normal(0,1,L)
+    n=n-np.convolve(n,np.ones(16)/16,mode="same")           # high-pass-ish
+    env=np.exp(-tt*70)*np.clip(tt/0.0015,0,1)                # first transient (mirror)
+    env2=np.exp(-np.clip(tt-0.045,0,None)*55)*(tt>0.045)     # second transient (shutter)
+    s=n*(env*0.55+env2*0.45)
+    body=np.sin(2*np.pi*1800*tt)*np.exp(-tt*120)*0.25
+    return (s+body)*0.10
+sh=shutter(); _r=0.0
+click_times=[]
+for s in sections:
+    for kind,srcn,st,nf in s["pieces"]:
+        if kind=="photo": click_times.append(_r)
+        _r+=nf/FPS
+for c in click_times:
+    i=int(max(c,0.02)*SR); ct[i:i+len(sh)]+=sh
+_w=_wave.open("build/clicks.wav","w"); _w.setnchannels(1); _w.setsampwidth(2); _w.setframerate(SR); _w.writeframes((np.clip(ct,-1,1)*32767).astype(np.int16).tobytes()); _w.close()
+print("clicks at", [round(c,2) for c in click_times])
 # ---- audio
 TOTAL=TOTAL_SPEECH-XF+CARD_DUR-XF2+CARD2_DUR
 af=[]; concat_in=[]
@@ -108,11 +130,12 @@ for i,s in enumerate(sections):
     af.append(f"[0:a]atrim=start={s['a0']:.4f}:end={s['a0']+s['dur']:.4f},asetpts=PTS-STARTPTS,afade=t=in:d=0.012,afade=t=out:st={s["dur"]-0.03:.4f}:d=0.03[d{i}]")
     concat_in.append(f"[d{i}]")
 af.append(f"{''.join(concat_in)}concat=n={len(sections)}:v=0:a=1,apad=whole_dur={TOTAL:.3f}[dlg]")
-af.append(f"[1:a]atrim=0:{TOTAL:.3f},volume=0.30,afade=t=out:st={TOTAL-3.2:.3f}:d=3.2[m0]")
+af.append(f"[1:a]atrim=0:{TOTAL:.3f},volume=0.30,afade=t=out:st={TOTAL-1.2:.3f}:d=1.2[m0]")
 af.append("[dlg]asplit[dlg1][sc]")
 af.append("[m0][sc]sidechaincompress=threshold=0.035:ratio=4:attack=40:release=900:makeup=1:level_sc=1[md]")
-af.append("[dlg1][md]amix=inputs=2:normalize=0:duration=first[mix]")
-subprocess.run(["ffmpeg","-v","error","-y","-i","dialogue_clean.wav","-i","music_bed.wav","-filter_complex",";".join(af),"-map","[mix]","-ar","48000","build/mix_raw.wav"],check=True)
+af.append("[2:a]aformat=channel_layouts=stereo,atrim=0:%.3f[clk]" % TOTAL)
+af.append("[dlg1][md][clk]amix=inputs=3:normalize=0:duration=first[mix]")
+subprocess.run(["ffmpeg","-v","error","-y","-i","dialogue_clean.wav","-i","music_bed.wav","-i","build/clicks.wav","-filter_complex",";".join(af),"-map","[mix]","-ar","48000","build/mix_raw.wav"],check=True)
 # two-pass loudnorm to -14 LUFS (linear)
 meas=subprocess.run(["ffmpeg","-hide_banner","-i","build/mix_raw.wav","-af","loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json","-f","null","-"],capture_output=True,text=True).stderr
 j=json.loads(meas[meas.rindex("{"):])
@@ -135,10 +158,15 @@ fc=(f"[0:v]fps={FPS},settb=1/{FPS},ass=build/subs.ass,noise=alls=5:allf=t+u[v0];
     f"[2:v]settb=1/{FPS},{card2}[card2];"
     f"[v0][card]xfade=transition=fade:duration={XF}:offset={offset:.4f}[v1];"
     f"[v1][card2]xfade=transition=fade:duration={XF2}:offset={offset2:.4f},fade=t=out:st={TOTAL-0.6:.3f}:d=0.6,format=yuv420p[v]")
-subprocess.run(["ffmpeg","-v","error","-y","-f","concat","-safe","0","-i","build/concat.txt",
-  "-f","lavfi","-i",f"color=c=0x0a0a0a:s=1080x1920:r={FPS}:d={CARD_DUR}",
-  "-f","lavfi","-i",f"color=c=0x0a0a0a:s=1080x1920:r={FPS}:d={CARD2_DUR}",
-  "-i","build/mix_final.wav",
-  "-filter_complex",fc,"-map","[v]","-map","3:a","-c:v","libx264","-crf","19","-preset","slow","-profile:v","high","-level","4.1","-r",str(FPS),"-pix_fmt","yuv420p","-c:a","aac","-b:a","192k","-ar","48000","-movflags","+faststart","-shortest","build/FSR-thankyou-reel.mp4"],check=True)
+if os.environ.get("REMUX"):
+    subprocess.run(["ffmpeg","-v","error","-y","-i","build/FSR-thankyou-reel.mp4","-i","build/mix_final.wav","-map","0:v","-map","1:a","-c:v","copy","-c:a","aac","-b:a","320k","-ar","48000","-movflags","+faststart","-shortest","build/FSR-thankyou-reel-remux.mp4"],check=True)
+    os.replace("build/FSR-thankyou-reel-remux.mp4","build/FSR-thankyou-reel.mp4")
+else:
+    subprocess.run(["ffmpeg","-v","error","-y","-f","concat","-safe","0","-i","build/concat.txt",
+      "-f","lavfi","-i",f"color=c=0x0a0a0a:s=1080x1920:r={FPS}:d={CARD_DUR}",
+      "-f","lavfi","-i",f"color=c=0x0a0a0a:s=1080x1920:r={FPS}:d={CARD2_DUR}",
+      "-i","build/mix_final.wav",
+      "-filter_complex",fc,"-map","[v]","-map","3:a","-c:v","libx264","-crf","15","-preset","veryslow","-profile:v","high","-level","4.2","-x264-params","aq-mode=3:ref=5","-r",str(FPS),"-pix_fmt","yuv420p","-c:a","aac","-b:a","320k","-ar","48000","-movflags","+faststart","-shortest","build/FSR-thankyou-reel.mp4"],check=True)
+    
 print("TOTAL",TOTAL)
 json.dump({"sections":[{k:v for k,v in s.items()} for s in sections],"total":TOTAL,"speech":TOTAL_SPEECH},open("build/timeline.json","w"),indent=1)
