@@ -105,22 +105,23 @@ print("captions:",len(lines)); print("\n".join(lines[:6]))
 import numpy as np, wave as _wave
 SR=48000; TOTAL=TOTAL_SPEECH-XF+CARD_DUR-XF2+CARD2_DUR
 ct=np.zeros(int(SR*(TOTAL+1)))
-def shutter():
-    rng=np.random.default_rng(3); L=int(0.16*SR); tt=np.arange(L)/SR; n=rng.normal(0,1,L)
-    n=n-np.convolve(n,np.ones(16)/16,mode="same")           # high-pass-ish
-    env=np.exp(-tt*70)*np.clip(tt/0.0015,0,1)                # first transient (mirror)
-    env2=np.exp(-np.clip(tt-0.045,0,None)*55)*(tt>0.045)     # second transient (shutter)
-    s=n*(env*0.55+env2*0.45)
-    body=np.sin(2*np.pi*1800*tt)*np.exp(-tt*120)*0.25
-    return (s+body)*0.10
-sh=shutter(); _r=0.0
+def shutter(rate=1.0):
+    # real recorded camera shutter (AOSP camera_click_48k.ogg, Apache-2.0), light high-pass, peak -11 dBFS
+    _w=_wave.open("shutter_src.wav"); x=np.frombuffer(_w.readframes(_w.getnframes()),dtype=np.int16).astype(np.float32)/32768
+    from scipy.signal import butter, sosfilt
+    x=sosfilt(butter(2,150,btype="high",fs=SR,output="sos"),x)
+    n=int(len(x)/rate); x=np.interp(np.arange(n)*rate,np.arange(len(x)),x)
+    x*=np.clip(np.arange(n)/(0.001*SR),0,1)
+    return x/np.abs(x).max()*10**(-11/20)
+_r=0.0
 click_times=[]
 for s in sections:
     for kind,srcn,st,nf in s["pieces"]:
         if kind=="photo": click_times.append(_r)
         _r+=nf/FPS
-for c in click_times:
-    i=int(max(c,0.02)*SR); ct[i:i+len(sh)]+=sh
+_rates=[1.0,0.985,1.015,0.99,1.01,0.98,1.02]
+for k,c in enumerate(click_times):
+    sh=shutter(_rates[k%len(_rates)]); i=int(max(c,0.02)*SR); ct[i:i+len(sh)]+=sh
 _w=_wave.open("build/clicks.wav","w"); _w.setnchannels(1); _w.setsampwidth(2); _w.setframerate(SR); _w.writeframes((np.clip(ct,-1,1)*32767).astype(np.int16).tobytes()); _w.close()
 print("clicks at", [round(c,2) for c in click_times])
 # ---- audio
@@ -130,12 +131,13 @@ for i,s in enumerate(sections):
     af.append(f"[0:a]atrim=start={s['a0']:.4f}:end={s['a0']+s['dur']:.4f},asetpts=PTS-STARTPTS,afade=t=in:d=0.012,afade=t=out:st={s["dur"]-0.03:.4f}:d=0.03[d{i}]")
     concat_in.append(f"[d{i}]")
 af.append(f"{''.join(concat_in)}concat=n={len(sections)}:v=0:a=1,apad=whole_dur={TOTAL:.3f}[dlg]")
-af.append(f"[1:a]atrim=0:{TOTAL:.3f},volume=0.30,afade=t=out:st={TOTAL-1.2:.3f}:d=1.2[m0]")
+af.append(f"[1:a]atrim=0:{TOTAL:.3f},volume=0.30,afade=t=out:st=62.30:d=0.30[m0]")
 af.append("[dlg]asplit[dlg1][sc]")
 af.append("[m0][sc]sidechaincompress=threshold=0.035:ratio=4:attack=40:release=900:makeup=1:level_sc=1[md]")
 af.append("[2:a]aformat=channel_layouts=stereo,atrim=0:%.3f[clk]" % TOTAL)
-af.append("[dlg1][md][clk]amix=inputs=3:normalize=0:duration=first[mix]")
-subprocess.run(["ffmpeg","-v","error","-y","-i","dialogue_clean.wav","-i","music_bed.wav","-i","build/clicks.wav","-filter_complex",";".join(af),"-map","[mix]","-ar","48000","build/mix_raw.wav"],check=True)
+af.append("[3:a]atrim=0:%.3f,volume=0.52[end]" % TOTAL)
+af.append("[dlg1][md][clk][end]amix=inputs=4:normalize=0:duration=first[mix]")
+subprocess.run(["ffmpeg","-v","error","-y","-i","dialogue_clean.wav","-i","music_bed.wav","-i","build/clicks.wav","-i","ending_stem.wav","-filter_complex",";".join(af),"-map","[mix]","-ar","48000","build/mix_raw.wav"],check=True)
 # two-pass loudnorm to -14 LUFS (linear)
 meas=subprocess.run(["ffmpeg","-hide_banner","-i","build/mix_raw.wav","-af","loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json","-f","null","-"],capture_output=True,text=True).stderr
 j=json.loads(meas[meas.rindex("{"):])
